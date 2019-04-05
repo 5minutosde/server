@@ -2,7 +2,6 @@ from datetime import datetime
 from decouple import config
 from pyrogram import Client
 from slugify import slugify
-
 import pyrebase
 
 api_id = config('API_ID', cast=int)
@@ -68,6 +67,7 @@ def user_photo(photo_id, username, user_id):
         {
             "{}/avatar".format(user_id): media_url,
         })
+    return media_url
 
 
 @app.on_message()
@@ -79,28 +79,31 @@ def my_handler(client, message):
     photo_id = message['from_user'].photo.big_file_id
 
     if str(user_id) in allowed_users:
-        data = {
-            "username": username,
-        }
-        db.child("users/{}".format(user_id)).set(data)
-        user_photo(photo_id, username, user_id)
+        user = db.child("users/{}".format(user_id)).get().val()
+        if user:
+            if message['reply_to_message']:
+                return reply_message(message, username)
+            if message.media:
+                return handle_media(message, username, user_id)
 
-        if message['reply_to_message']:
-            return reply_message(message, username)
-        if message.media:
-            return handle_media(message, username, user_id)
-
-        slug = slugify(message["text"] + '-por-' + username)
-        data = {
-            "title": message["text"],
-            "slug": slug,
-            "created_at": str(datetime.now()),
-            "user": {
-                "id": user_id,
+            slug = slugify(message["text"] + '-por-' + username)
+            data = {
+                "title": message["text"],
+                "slug": slug,
+                "created_at": str(datetime.now()),
+                "user": {
+                    "id": user_id,
+                    "username": username,
+                    "avatar": user['avatar']
+                }
+            }
+            db.child("audios/{}".format(message['message_id'])).set(data)
+        else:
+            data = {
                 "username": username,
             }
-        }
-        db.child("audios/{}".format(message['message_id'])).set(data)
+            db.child("users/{}".format(user_id)).set(data)
+            user_photo(photo_id, username, user_id)
     else:
         data = {
             "username": username,
