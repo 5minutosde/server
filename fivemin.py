@@ -42,10 +42,12 @@ def handle_media(message):
 @app.on_message()
 def my_handler(client, message):
     print(message)
+    username = message['from_user'].username
+    user_id = message['from_user'].id
     data = {
-            "username": message['from_user'].username,
+            "username": username,
         }
-    db.child("users/{}".format(message['from_user'].id)).set(data)
+    db.child("users/{}".format(user_id)).set(data)
     if message['reply_to_message']:
         if message.media:
             media_url = handle_media(message)
@@ -54,7 +56,7 @@ def my_handler(client, message):
                     "{}/audios".format(message['reply_to_message']['message_id']): media_url,
                 })
         else:
-            slug = slugify(message["text"])
+            slug = slugify(message["text"] + '-by-' + username)
             db.child("audios/").update({
                 "{}/title".format(message['reply_to_message']['message_id']): message["text"],
                 "{}/slug".format(message['reply_to_message']['message_id']): slug
@@ -66,18 +68,19 @@ def my_handler(client, message):
             "media_audio": media_url,
             "created_at": str(datetime.now()),
             "user": {
-                "id": message['from_user'].id,
-                "username": message['from_user'].username,
+                "id": user_id,
+                "username": username,
             }
         }
         return db.child("audios/{}".format(message['message_id'])).set(data)
+    slug = slugify(message["text"] + '-by-' + username)
     data = {
         "title": message["text"],
-        "slug": slugify(message["text"]),
+        "slug": slug,
         "created_at": str(datetime.now()),
         "user": {
-            "id": message['from_user'].id,
-            "username": message['from_user'].username,
+            "id": user_id,
+            "username": username,
         }
     }
     db.child("audios/{}".format(message['message_id'])).set(data)
