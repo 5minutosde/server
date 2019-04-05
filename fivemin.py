@@ -39,6 +39,11 @@ def handle_media(message):
 
 @app.on_message()
 def my_handler(client, message):
+    print(message)
+    data = {
+            "username": message['from_user'].username,
+        }
+    db.child("users/{}".format(message['from_user'].id)).set(data)
     if message['reply_to_message']:
         if message.media:
             media_url = handle_media(message)
@@ -51,10 +56,24 @@ def my_handler(client, message):
         return
     if message.media:
         media_url = handle_media(message)
-        data = {"audio": media_url, "created_at": str(datetime.now()), "user": message['from_user'].id}
+        data = {
+            "media_audio": media_url,
+            "created_at": str(datetime.now()),
+            "user": {
+                "id": message['from_user'].id,
+                "username": message['from_user'].username,
+            }
+        }
         return db.child("audios/{}".format(message['message_id'])).set(data)
-    data = {"title": message["text"], "created_at": str(datetime.now()), "user": message['from_user'].id}
-    db.child("audio/{}".format(message['message_id'])).set(data)
+    data = {
+        "title": message["text"],
+        "created_at": str(datetime.now()),
+        "user": {
+            "id": message['from_user'].id,
+            "username": message['from_user'].username,
+        }
+    }
+    db.child("audios/{}".format(message['message_id'])).set(data)
 
 
 app.run()
