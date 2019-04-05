@@ -22,6 +22,7 @@ firebase = pyrebase.initialize_app(firebase_config)
 db = firebase.database()
 storage = firebase.storage()
 
+allowed_users = config('ALLOWED_USERS')
 
 def handle_media(message, username, user_id):
     local_media = app.download_media(message)
@@ -59,30 +60,37 @@ def reply_message(message, username):
 
 @app.on_message()
 def my_handler(client, message):
+
     print(message)
     username = message['from_user'].username
     user_id = message['from_user'].id
-    data = {
+    if str(user_id) in allowed_users:
+        data = {
             "username": username,
         }
-    db.child("users/{}".format(user_id)).set(data)
+        db.child("users/{}".format(user_id)).set(data)
 
-    if message['reply_to_message']:
-        return reply_message(message, username)
-    if message.media:
-        return handle_media(message, username, user_id)
+        if message['reply_to_message']:
+            return reply_message(message, username)
+        if message.media:
+            return handle_media(message, username, user_id)
 
-    slug = slugify(message["text"] + '-por-' + username)
-    data = {
+        slug = slugify(message["text"] + '-por-' + username)
+        data = {
         "title": message["text"],
-        "slug": slug,
-        "created_at": str(datetime.now()),
-        "user": {
-            "id": user_id,
+            "slug": slug,
+            "created_at": str(datetime.now()),
+            "user": {
+                "id": user_id,
+                "username": username,
+            }
+        }
+        db.child("audios/{}".format(message['message_id'])).set(data)
+    else:
+        data = {
             "username": username,
         }
-    }
-    db.child("audios/{}".format(message['message_id'])).set(data)
+        db.child("wait_list/{}".format(user_id)).set(data)
 
 
 app.run()
