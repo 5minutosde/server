@@ -34,7 +34,7 @@ def handle_media(message, username, user_id, avatar_url):
     return storage.child(file_name).get_url(media['downloadTokens'])
 
 
-def media_message(message, username, user_id, avatar_url):
+def media_message(message, user_id, username, avatar_url):
     media_url = handle_media(message, username, user_id, avatar_url)
     data = {
         "media_audio": media_url,
