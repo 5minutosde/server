@@ -24,6 +24,7 @@ storage = firebase.storage()
 
 allowed_users = config('ALLOWED_USERS')
 
+
 def handle_media(message, username, user_id):
     local_media = app.download_media(message)
     if message["voice"]:
@@ -77,7 +78,7 @@ def my_handler(client, message):
 
         slug = slugify(message["text"] + '-por-' + username)
         data = {
-        "title": message["text"],
+            "title": message["text"],
             "slug": slug,
             "created_at": str(datetime.now()),
             "user": {
