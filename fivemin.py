@@ -2,6 +2,8 @@ import json
 from datetime import datetime
 from decouple import config
 from pyrogram import Client, Filters
+from slugify import slugify
+
 import pyrebase
 
 api_id = config('API_ID', cast=int)
@@ -52,7 +54,11 @@ def my_handler(client, message):
                     "{}/audios".format(message['reply_to_message']['message_id']): media_url,
                 })
         else:
-            db.child("audios/").update({"{}/title".format(message['reply_to_message']['message_id']): message["text"]})
+            slug = slugify(message["text"])
+            db.child("audios/").update({
+                "{}/title".format(message['reply_to_message']['message_id']): message["text"],
+                "{}/slug".format(message['reply_to_message']['message_id']): slug
+            })
         return
     if message.media:
         media_url = handle_media(message)
@@ -67,6 +73,7 @@ def my_handler(client, message):
         return db.child("audios/{}".format(message['message_id'])).set(data)
     data = {
         "title": message["text"],
+        "slug": slugify(message["text"]),
         "created_at": str(datetime.now()),
         "user": {
             "id": message['from_user'].id,
