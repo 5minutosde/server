@@ -59,17 +59,31 @@ def reply_message(message, username):
         })
 
 
+def user_photo(photo_id, username, user_id):
+    user_photo = app.download_media(photo_id)
+    file_name = "medias/{}{}".format(username, photo_id)
+    media = storage.child(file_name).put(user_photo)
+    media_url = storage.child(file_name).get_url(media['downloadTokens'])
+    db.child("users/").update(
+        {
+            "{}/avatar".format(user_id): media_url,
+        })
+
+
 @app.on_message()
 def my_handler(client, message):
 
     print(message)
     username = message['from_user'].username
     user_id = message['from_user'].id
+    photo_id = message['from_user'].photo.big_file_id
+
     if str(user_id) in allowed_users:
         data = {
             "username": username,
         }
         db.child("users/{}".format(user_id)).set(data)
+        user_photo(photo_id, username, user_id)
 
         if message['reply_to_message']:
             return reply_message(message, username)
