@@ -21,8 +21,6 @@ firebase = pyrebase.initialize_app(firebase_config)
 db = firebase.database()
 storage = firebase.storage()
 
-allowed_users = config('ALLOWED_USERS')
-
 
 def handle_media(message, username, user_id, avatar_url):
     local_media = app.download_media(message)
@@ -104,7 +102,7 @@ def my_handler(client, message):
     user_id = message['from_user'].id
     photo_id = message['from_user'].photo.big_file_id
 
-    if str(user_id) in allowed_users:
+    if user_id:
         user = db.child("users/{}".format(user_id)).get().val()
         if user:
             handle_message(message, user_id, username, user['avatar'])
@@ -120,7 +118,6 @@ def my_handler(client, message):
             "username": username,
             "first_name": message['from_user'].first_name,
         }
-        db.child("wait_list/{}".format(user_id)).set(data)
 
 
 app.run()
