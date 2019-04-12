@@ -108,7 +108,7 @@ def on_message_handler(client, message):
     users_photos = app.get_user_profile_photos(user_id).total_count
     user = db.child("users/{}".format(user_id)).get().val()
     avatar = user.get('avatar') if user else None
-    photo_id = message['from_user'].get('photo').get('big_file_id') if users_photos >= 1 else None
+    photo_id = message['from_user'].photo.big_file_id if users_photos >= 1 else None
 
     if user:
         handle_message(message, user_id, username, avatar)
