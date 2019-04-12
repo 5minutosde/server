@@ -95,29 +95,36 @@ def handle_message(message, user_id, username, user_avatar):
     db.child("audios/{}".format(message['message_id'])).set(data)
 
 
-@app.on_message()
-def my_handler(client, message):
+def handle_delete(message):
+    for msg in message['messages']:
+        db.child('audios').child("{}".format(msg['message_id'])).remove()
 
+
+@app.on_message()
+def on_message_handler(client, message):
+    print(message)
     username = message['from_user'].username
     user_id = message['from_user'].id
-    photo_id = message['from_user'].photo.big_file_id
+    users_photos = app.get_user_profile_photos(user_id).total_count
+    user = db.child("users/{}".format(user_id)).get().val()
+    avatar = user.get('avatar') if user else None
+    photo_id = message['from_user'].get('photo').get('big_file_id') if users_photos >= 1 else None
 
-    if user_id:
-        user = db.child("users/{}".format(user_id)).get().val()
-        if user:
-            handle_message(message, user_id, username, user['avatar'])
-        else:
-            data = {
-                "username": username,
-            }
-            db.child("users/{}".format(user_id)).set(data)
-            avatar_url = user_photo(photo_id, username, user_id)
-            handle_message(message, user_id, username, avatar_url)
+    if user:
+        handle_message(message, user_id, username, avatar)
     else:
         data = {
             "username": username,
-            "first_name": message['from_user'].first_name,
         }
+        db.child("users/{}".format(user_id)).set(data)
+        avatar_url = user_photo(photo_id, username, user_id) if photo_id else None
+        if avatar_url:
+            handle_message(message, user_id, username, avatar_url)
+
+
+@app.on_deleted_messages()
+def on_delete_handler(client, message):
+    handle_delete(message)
 
 
 app.run()
