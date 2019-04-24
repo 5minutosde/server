@@ -110,17 +110,26 @@ def on_message_handler(client, message):
     avatar = user.get('avatar') if user else None
     photo_id = message['from_user'].photo.big_file_id if users_photos >= 1 else None
 
-    if user:
+
+    if user and username:
         handle_message(message, user_id, username, avatar)
     else:
         data = {
             "username": username,
         }
-        db.child("users/{}".format(user_id)).set(data)
-        avatar_url = user_photo(photo_id, username, user_id) if photo_id else None
-        if avatar_url:
-            handle_message(message, user_id, username, avatar_url)
-
+        if username:
+            db.child("users/{}".format(user_id)).set(data)
+            avatar_url = user_photo(photo_id, username, user_id) if photo_id else None
+            if avatar_url:
+                handle_message(message, user_id, username, avatar_url)
+        else:
+            app.send_message(
+                user_id,
+                "Olá, parece que você não tem um **nome de usuário** =\ \n\n" +
+                "Para utilizar o 5minutos.de é necessário ter um **nome de usuário** configurado no Telegram \n\n" +
+                "Para isso vá em **configurações** e altere seu nome de usuário",
+                parse_mode="MARKDOWN"
+            )
 
 @app.on_deleted_messages()
 def on_delete_handler(client, message):
